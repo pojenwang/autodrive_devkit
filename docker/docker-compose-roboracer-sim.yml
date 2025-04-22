@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  roboracer_sim:
+    image: autodriveecosystem/autodrive_roboracer_sim:2025-icra-practice
+    pull_policy: always
+    runtime: nvidia
+    network_mode: host
+    tty: true
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - QT_QPA_PLATFORM=xcb
+      - XAUTHORITY=/tmp/.docker.xauth
+    devices:
+      - /dev/dri:/dev/dri
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    
+
+  roboracer_api:
+    image: autodriveecosystem/autodrive_roboracer_api:2025-icra-practice
+    pull_policy: always
+    runtime: nvidia
+    network_mode: host
+    tty: true
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    volumes:
+      - ../my_project:/home/autodrive_devkit/src/my_project:rw
+    # volumes:
+    #   - ./my_project:/workspace/project

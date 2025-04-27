@@ -16,4 +16,4 @@ services:
               count: all
               capabilities: [gpu]
     volumes:
-      - ../my_project:/home/autodrive_devkit/src/my_project:rw
+      - ../autoware:/home/autodrive_devkit/src/autoware:rw

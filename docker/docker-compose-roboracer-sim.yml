@@ -1,8 +1,6 @@
-version: '3.8'
-
-name: autodrive_devkit_roboracer_api
 services:
   roboracer_api:
+    container_name: autodrive_roboracer_api
     image: autodriveecosystem/autodrive_roboracer_api:2025-icra-practice
     pull_policy: always
     runtime: nvidia

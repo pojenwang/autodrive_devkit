@@ -89,7 +89,7 @@ SmartGapFollowNode::SmartGapFollowNode(const rclcpp::NodeOptions & node_options)
   pub_sim_steering_ = this->create_publisher<std_msgs::msg::Float32>("~/out/sim_steering", 10);
 }
 
-void SmartGapFollowNode::findGap(const sensor_msgs::msg::LaserScan scan)
+void SmartGapFollowNode::findGap(const sensor_msgs::msg::LaserScan & scan)
 {
   const float min_gap_size = node_param_.min_gap_size;
   const float range_thresh_max = node_param_.range_thresh_max;
@@ -233,13 +233,13 @@ void SmartGapFollowNode::findGap(const sensor_msgs::msg::LaserScan scan)
   
 } 
 
-void SmartGapFollowNode::findTargetGap(const sensor_msgs::msg::LaserScan scan)
+void SmartGapFollowNode::findTargetGap(const sensor_msgs::msg::LaserScan & scan)
 {
   const float angle_increment = scan.angle_increment;
   const float angle_min = scan.angle_min;
   //const float angle_max = scan.angle_max;
   const float goal_angle = node_param_.goal_angle;
-  float min_angle_diff = INT_MAX;
+  float min_angle_diff = std::numeric_limits<float>::max();
   for(auto it:gap_indices){
     float angle_diff_first = abs(angle_min + it.first * angle_increment - goal_angle);
     float angle_diff_second = abs(angle_min + it.second * angle_increment - goal_angle);
@@ -250,7 +250,7 @@ void SmartGapFollowNode::findTargetGap(const sensor_msgs::msg::LaserScan scan)
   }
 }
 
-void SmartGapFollowNode::calcMotionCmd(const sensor_msgs::msg::LaserScan scan)
+void SmartGapFollowNode::calcMotionCmd(const sensor_msgs::msg::LaserScan & scan)
 {
   const float min_speed = node_param_.min_speed;
   const float max_speed = node_param_.max_speed;
@@ -270,8 +270,15 @@ void SmartGapFollowNode::calcMotionCmd(const sensor_msgs::msg::LaserScan scan)
   float gap_angle_max_x = scan.ranges[target_gap_indices.second] * sin(gap_angle_max);
   float gap_angle_max_y = scan.ranges[target_gap_indices.second] * cos(gap_angle_max);
   float gap_size = sqrt(pow(gap_angle_min_x - gap_angle_max_x, 2) + pow(gap_angle_min_y - gap_angle_max_y,2));
-  float gap_angle = atan((gap_angle_min_y - gap_angle_max_y) / (gap_angle_min_x - gap_angle_max_x));
-  float wall_clearance = dist_to_gap > 2.5 ? wall_clearance = wall_clearance_max : wall_clearance_min;
+  //float gap_angle = atan((gap_angle_min_y - gap_angle_max_y) / (gap_angle_min_x - gap_angle_max_x));
+
+  float dy = gap_angle_min_y - gap_angle_max_y;
+  float dx = gap_angle_min_x - gap_angle_max_x;
+  float gap_angle = std::atan2(dy, dx);
+
+  float wall_clearance = (dist_to_gap > 2.5f)
+    ? wall_clearance_max
+    : wall_clearance_min;
 
   float steer_limit_min = gap_angle_min + atan((car_width / 2 + wall_clearance) / scan.ranges[target_gap_indices.first]);
   float steer_limit_max = gap_angle_max - atan((car_width / 2 + wall_clearance) / scan.ranges[target_gap_indices.second]);

@@ -72,9 +72,9 @@ private:
   rcl_interfaces::msg::SetParametersResult onSetParam(
     const std::vector<rclcpp::Parameter> & params);
 
-  void findGap(const sensor_msgs::msg::LaserScan scan);
-  void findTargetGap(const sensor_msgs::msg::LaserScan scan);
-  void calcMotionCmd(const sensor_msgs::msg::LaserScan scan);
+  void findGap(const sensor_msgs::msg::LaserScan & scan);
+  void findTargetGap(const sensor_msgs::msg::LaserScan & scan);
+  void calcMotionCmd(const sensor_msgs::msg::LaserScan & scan);
   void downSampleLidarScan();
 
   // Parameter

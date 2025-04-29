@@ -48,6 +48,8 @@ public:
     double wall_clearance_max{};
     double min_speed{};
     double max_speed{};
+    double boost_speed{};
+    double acceleration{};
     double small_angle_kp{};
     double large_angle_kp{};
   };
@@ -75,6 +77,7 @@ private:
   void findGap(const sensor_msgs::msg::LaserScan & scan);
   void findTargetGap(const sensor_msgs::msg::LaserScan & scan);
   void calcMotionCmd(const sensor_msgs::msg::LaserScan & scan);
+  void calcSpeedCmd(float target_speed, float acceleration);
   void downSampleLidarScan();
 
   // Parameter
@@ -86,7 +89,8 @@ private:
   bool deadend;
   std::pair<int, int> target_gap_indices;
   std::pair<geometry_msgs::msg::Point, geometry_msgs::msg::Point> target_gap;
-
+  rclcpp::Time timestamp;
+  float target_speed_out;
 };
 
 }  // namespace classic_grass_detection

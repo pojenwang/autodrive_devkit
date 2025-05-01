@@ -74,6 +74,7 @@ SmartGapFollowNode::SmartGapFollowNode(const rclcpp::NodeOptions & node_options)
   node_param_.min_speed = declare_parameter<double>("min_speed");
   node_param_.max_speed = declare_parameter<double>("max_speed");
   node_param_.boost_speed = declare_parameter<double>("boost_speed");
+  node_param_.boost_dist_thresh = declare_parameter<double>("boost_dist_thresh");
   node_param_.acceleration = declare_parameter<double>("acceleration");
   node_param_.small_angle_kp = declare_parameter<double>("small_angle_kp");
   node_param_.large_angle_kp = declare_parameter<double>("large_angle_kp");
@@ -257,6 +258,7 @@ void SmartGapFollowNode::calcMotionCmd(const sensor_msgs::msg::LaserScan & scan)
   const float min_speed = node_param_.min_speed;
   const float max_speed = node_param_.max_speed;
   const float boost_speed = node_param_.boost_speed;
+  const float boost_dist_thresh = node_param_.boost_dist_thresh;
   float acceleration = node_param_.acceleration;
   const float small_angle_kp = node_param_.small_angle_kp;
   const float large_angle_kp = node_param_.large_angle_kp;
@@ -273,6 +275,7 @@ void SmartGapFollowNode::calcMotionCmd(const sensor_msgs::msg::LaserScan & scan)
   float gap_angle_min_y = scan.ranges[target_gap_indices.first] * cos(gap_angle_min);
   float gap_angle_max_x = scan.ranges[target_gap_indices.second] * sin(gap_angle_max);
   float gap_angle_max_y = scan.ranges[target_gap_indices.second] * cos(gap_angle_max);
+  
   float gap_size = sqrt(pow(gap_angle_min_x - gap_angle_max_x, 2) + pow(gap_angle_min_y - gap_angle_max_y,2));
 
   float dy = gap_angle_min_y - gap_angle_max_y;
@@ -304,13 +307,16 @@ void SmartGapFollowNode::calcMotionCmd(const sensor_msgs::msg::LaserScan & scan)
   pub_sim_steering_ ->publish(steer_angle_msg);
 
   float target_speed = (target_speed_gap + target_speed_steer) / 2;
-  if(dist_to_gap > 4.8){
+  if(dist_to_gap > boost_dist_thresh){
     target_speed = boost_speed;
-    acceleration *= 5;
+    acceleration *= 10;
     RCLCPP_INFO_STREAM(get_logger(), "boost!!!");
   }
 
   calcSpeedCmd(target_speed, acceleration);
+  //RCLCPP_INFO_STREAM(get_logger(), "steer_angle_diff: "<< (steer_angle - last_steer_angle) * 180 / M_PI);
+
+  last_steer_angle = steer_angle;
 
   std_msgs::msg::Float32 throttle_msg;
   throttle_msg.data = target_speed_out * 0.05;

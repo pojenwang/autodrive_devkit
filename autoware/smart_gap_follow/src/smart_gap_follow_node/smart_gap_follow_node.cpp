@@ -275,7 +275,6 @@ void SmartGapFollowNode::calcMotionCmd(const sensor_msgs::msg::LaserScan & scan)
   float gap_angle_min_y = scan.ranges[target_gap_indices.first] * cos(gap_angle_min);
   float gap_angle_max_x = scan.ranges[target_gap_indices.second] * sin(gap_angle_max);
   float gap_angle_max_y = scan.ranges[target_gap_indices.second] * cos(gap_angle_max);
-  
   float gap_size = sqrt(pow(gap_angle_min_x - gap_angle_max_x, 2) + pow(gap_angle_min_y - gap_angle_max_y,2));
 
   float dy = gap_angle_min_y - gap_angle_max_y;
@@ -286,11 +285,11 @@ void SmartGapFollowNode::calcMotionCmd(const sensor_msgs::msg::LaserScan & scan)
     ? wall_clearance_max
     : wall_clearance_min;
 
-  float steer_limit_min = gap_angle_min + atan((car_width / 2 + wall_clearance) / scan.ranges[target_gap_indices.first]);
-  float steer_limit_max = gap_angle_max - atan((car_width / 2 + wall_clearance) / scan.ranges[target_gap_indices.second]);
+  float steer_angle_min = gap_angle_min + atan((car_width / 2 + wall_clearance) / scan.ranges[target_gap_indices.first]);
+  float steer_angle_max = gap_angle_max - atan((car_width / 2 + wall_clearance) / scan.ranges[target_gap_indices.second]);
 
   float steer_angle = scan.ranges[target_gap_indices.first] > scan.ranges[target_gap_indices.second] ? 
-    steer_limit_max : steer_limit_min;
+    steer_angle_max : steer_angle_min;
 
   const float small_steer_angle_thresh = 15 * M_PI / 180;
   steer_angle *= abs(steer_angle) < small_steer_angle_thresh ? small_angle_kp : large_angle_kp;

@@ -48,6 +48,7 @@ public:
     double wall_clearance_max{};
     double min_speed{};
     double max_speed{};
+    double boost_dist_thresh{};
     double boost_speed{};
     double acceleration{};
     double small_angle_kp{};
@@ -91,6 +92,7 @@ private:
   std::pair<geometry_msgs::msg::Point, geometry_msgs::msg::Point> target_gap;
   rclcpp::Time timestamp;
   float target_speed_out;
+  float last_steer_angle;
 };
 
 }  // namespace classic_grass_detection

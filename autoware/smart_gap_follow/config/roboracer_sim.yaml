@@ -14,9 +14,9 @@
     wall_clearance_min: 0.20
     wall_clearance_max: 0.57
     min_speed: 1.0
-    max_speed: 5.22
+    max_speed: 5.2
     boost_speed: 18.0
     boost_dist_thresh: 4.8
-    acceleration: 4.0
+    acceleration: 4.5
     small_angle_kp: 0.35
     large_angle_kp: 0.51

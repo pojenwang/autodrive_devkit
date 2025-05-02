@@ -1,4 +1,10 @@
 <launch>
+
+  <!-- launch bridge -->
+
+  <include
+    file="$(find-pkg-share autodrive_roboracer)/launch/bringup_graphics.launch.py"/>
+
   <arg name="param_path" default="$(find-pkg-share smart_gap_follow)/config/roboracer_sim.yaml"/>
 
   <node

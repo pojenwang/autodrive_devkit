@@ -17,10 +17,10 @@
     min_speed: 1.1
     slow_speed: 3.1
     max_speed: 5.5
-    boost_speed: 15.0
-    max_speed_angle_thresh: 5.0
+    boost_speed: 5.8
+    max_speed_angle_thresh: 4.9
     boost_dist_thresh: 4.6
-    acceleration: 4.5
-    deceleration: 15.0
+    acceleration: 4.2
+    deceleration: 12.0
     small_angle_kp: 0.5
-    large_angle_kp: 0.62
+    large_angle_kp: 0.65

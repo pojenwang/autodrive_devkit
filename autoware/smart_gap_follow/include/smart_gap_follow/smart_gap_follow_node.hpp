@@ -81,7 +81,7 @@ private:
 
   void findGap(const sensor_msgs::msg::LaserScan & scan);
   void findTargetGap(const sensor_msgs::msg::LaserScan & scan);
-  double normalizeGapAngle(double & gap_angle);
+  void normalizeGapAngle(float & gap_angle);
   void calcMotionCmd(const sensor_msgs::msg::LaserScan & scan);
   void calcSpeedCmd(float target_speed, float acceleration, float deceleration);
   void downSampleLidarScan();

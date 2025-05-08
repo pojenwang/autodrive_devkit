@@ -71,6 +71,7 @@ SmartGapFollowNode::SmartGapFollowNode(const rclcpp::NodeOptions & node_options)
   node_param_.goal_angle = declare_parameter<double>("goal_angle");
   node_param_.wall_clearance_min = declare_parameter<double>("wall_clearance_min");
   node_param_.wall_clearance_max = declare_parameter<double>("wall_clearance_max");
+  node_param_.wall_clearance_dist_thresh = declare_parameter<double>("wall_clearance_dist_thresh");
   node_param_.min_speed = declare_parameter<double>("min_speed");
   node_param_.slow_speed = declare_parameter<double>("slow_speed");
   node_param_.max_speed = declare_parameter<double>("max_speed");
@@ -260,11 +261,11 @@ void SmartGapFollowNode::findTargetGap(const sensor_msgs::msg::LaserScan & scan)
   }
 }
 
-double SmartGapFollowNode::normalizeGapAngle(double gap_angle) {
-    gap_angle = std::fmod(gap_angle + 3 * M_PI / 2, 2 * M_PI);
-    if (gap_angle < 0)
-        gap_angle += 2 * M_PI;
-    return gap_angle - M_PI;
+void SmartGapFollowNode::normalizeGapAngle(float & gap_angle) {
+  gap_angle = std::fmod(gap_angle + 3 * M_PI / 2, 2 * M_PI);
+  if (gap_angle < 0)
+      gap_angle += 2 * M_PI;
+  gap_angle -= M_PI;
 }
 
 void SmartGapFollowNode::calcMotionCmd(const sensor_msgs::msg::LaserScan & scan)
@@ -310,7 +311,7 @@ void SmartGapFollowNode::calcMotionCmd(const sensor_msgs::msg::LaserScan & scan)
   float steer_angle_max = gap_angle_max - atan((car_width / 2 + wall_clearance) / scan.ranges[target_gap_indices.second]);
   
   // if the min and max steer angles crosses over because of the added buffer, set target steer_angle to the closer obstacle
-  // edge, else, set steer angle equle the average
+  // edge, otherwise, set steer angle equle the average
   float steer_angle;
   if(steer_angle_min > steer_angle_max){
     steer_angle = scan.ranges[target_gap_indices.first] > scan.ranges[target_gap_indices.second] ? 
@@ -319,13 +320,17 @@ void SmartGapFollowNode::calcMotionCmd(const sensor_msgs::msg::LaserScan & scan)
   else
     steer_angle = (steer_angle_min + steer_angle_max) / 2;
 
-  const float small_steer_angle_thresh = 12 * M_PI / 180;
+  RCLCPP_INFO_STREAM(get_logger(), "steer_angle_min:"<<steer_angle_min * 180 / M_PI);
+  RCLCPP_INFO_STREAM(get_logger(), "steer_angle_max:"<<steer_angle_max * 180 / M_PI); 
+
+  const float small_steer_angle_thresh = 20 * M_PI / 180;
   steer_angle *= abs(steer_angle) < small_steer_angle_thresh ? small_angle_kp : large_angle_kp;
+  
   const float steer_angle_limit = 60 * M_PI / 180;
   steer_angle = std::min(steer_angle, steer_angle_limit);
   steer_angle = std::max(steer_angle, -steer_angle_limit);
 
-  if(dist_to_gap < 2.45 && gap_size < 3.7){
+  if(dist_to_gap < 2.45 && gap_size < 3.8){
     max_speed = slow_speed;
     RCLCPP_INFO_STREAM(get_logger(), "slow!!!");
   }
@@ -349,15 +354,15 @@ void SmartGapFollowNode::calcMotionCmd(const sensor_msgs::msg::LaserScan & scan)
   steer_angle_msg.data = steer_angle;
   pub_sim_steering_ ->publish(steer_angle_msg);
 
-  target_speed = 0.6 * target_speed_gap + 0.4 * target_speed_steer;
+  target_speed = 0.5 * target_speed_gap + 0.5 * target_speed_steer;
 
-  if(dist_to_gap < 1.1 || (dist_to_gap < 1.4 && abs(steer_angle) * 180 / M_PI > 3 && gap_size < 3)){
+  if(dist_to_gap < 1.1 || (dist_to_gap < 1.4 && abs(steer_angle) * 180 / M_PI > 3)){
     target_speed = 1.45;
     RCLCPP_INFO_STREAM(get_logger(), "more slow!!!");
   }
-  if(dist_to_gap > boost_dist_thresh){
+  if(dist_to_gap > boost_dist_thresh && abs(steer_angle) * 180 / M_PI < 5){
     target_speed = boost_speed;
-    acceleration *= 4;
+    acceleration *= 1.5;
     RCLCPP_INFO_STREAM(get_logger(), "boost!!!");
   }
 
@@ -388,6 +393,9 @@ void SmartGapFollowNode::calcMotionCmd(const sensor_msgs::msg::LaserScan & scan)
 void SmartGapFollowNode::calcSpeedCmd(float target_speed, float acceleration, float deceleration){
   const auto duration = rclcpp::Clock().now() - timestamp;
   const float time_lapse = duration.seconds();
+  RCLCPP_INFO_STREAM(get_logger(), "time_lapse: "<<time_lapse << " sec");
+  if(time_lapse < 0.02)
+    return; 
   timestamp = rclcpp::Clock().now();
   
   double speed_diff = target_speed - target_speed_out;

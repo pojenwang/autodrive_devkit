@@ -1,7 +1,7 @@
 services:
   roboracer_api:
     container_name: autodrive_roboracer_api
-    image: autodriveecosystem/autodrive_roboracer_api:2025-icra-practice
+    image: autodriveecosystem/autodrive_roboracer_api:2025-icra-compete
     pull_policy: always
     runtime: nvidia
     network_mode: host

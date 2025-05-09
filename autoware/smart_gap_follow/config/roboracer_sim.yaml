@@ -1,5 +1,6 @@
 /**:
   ros__parameters:
+    target_frequency: 20.0
     car_width: 0.27
     car_length: 0.5
     front_overhang: 0.43
@@ -7,19 +8,19 @@
     wheel_base: 0.324
     steering_speed: 3.2
     scan_down_sample_scale: 2.0
-    range_thresh_min: 3.0
+    range_thresh_min: 2.8
     range_thresh_max: 6.0
     min_gap_size: 0.8
     goal_angle: 0.0
-    wall_clearance_min: 0.22
+    wall_clearance_min: 0.3
     wall_clearance_max: 0.6
     wall_clearance_dist_thresh: 1.7
-    min_speed: 1.1
+    min_speed: 1.15
     slow_speed: 3.2
-    max_speed: 3.8
-    boost_speed: 5.5
-    max_speed_angle_thresh: 10.0
-    boost_dist_thresh: 4.5
+    max_speed: 4.1
+    boost_speed: 7.0
+    max_speed_angle_thresh: 15.0
+    boost_dist_thresh: 4.6
     acceleration: 4.0
     deceleration: 15.0
     small_angle_kp: 0.5

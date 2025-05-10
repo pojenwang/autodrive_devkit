@@ -98,6 +98,8 @@ private:
   rclcpp::Time timestamp;
   float target_speed;
   float target_speed_out;
+  int gap_size_decreases_cnt;
+  float last_gap_size;
 };
 
 }  // namespace classic_grass_detection

@@ -12,15 +12,15 @@
     range_thresh_max: 6.0
     min_gap_size: 0.8
     goal_angle: 0.0
-    wall_clearance_min: 0.29
+    wall_clearance_min: 0.28
     wall_clearance_max: 0.6
     wall_clearance_dist_thresh: 1.65
-    min_speed: 1.3
+    min_speed: 1.2
     slow_speed: 3.2
     max_speed: 4.2
     boost_speed: 7.7
     max_speed_angle_thresh: 5.0
-    boost_dist_thresh: 4.35
+    boost_dist_thresh: 4.6
     acceleration: 4.0
     deceleration: 15.0
     small_angle_kp: 0.65

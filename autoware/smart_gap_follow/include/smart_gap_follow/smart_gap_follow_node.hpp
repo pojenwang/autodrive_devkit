@@ -95,10 +95,11 @@ private:
   bool deadend;
   std::pair<int, int> target_gap_indices;
   std::pair<geometry_msgs::msg::Point, geometry_msgs::msg::Point> target_gap;
-  rclcpp::Time timestamp;
+  rclcpp::Time velocitytimestamp;
+  rclcpp::Time plannertimestamp;
   float target_speed;
   float target_speed_out;
-  int gap_size_decreases_cnt;
+  int gap_size_decrease_cnt;
   float last_gap_size;
 };
 

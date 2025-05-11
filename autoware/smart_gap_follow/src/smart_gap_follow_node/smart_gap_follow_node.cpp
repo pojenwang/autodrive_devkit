@@ -82,7 +82,7 @@ SmartGapFollowNode::SmartGapFollowNode(const rclcpp::NodeOptions & node_options)
   node_param_.deceleration = declare_parameter<double>("deceleration");
   node_param_.small_angle_kp = declare_parameter<double>("small_angle_kp");
   node_param_.large_angle_kp = declare_parameter<double>("large_angle_kp");
-  gap_size_decreases_cnt = 0;
+  gap_size_decrease_cnt = 0;
 
   // Subscriber
   rclcpp::QoS qos(rclcpp::KeepLast(1));
@@ -330,11 +330,6 @@ void SmartGapFollowNode::calcMotionCmd(const sensor_msgs::msg::LaserScan & scan)
   const float steer_angle_limit = 60 * M_PI / 180;
   steer_angle = std::min(steer_angle, steer_angle_limit);
   steer_angle = std::max(steer_angle, -steer_angle_limit);
-  /*
-  if(dist_to_gap < 2.5){
-    max_speed = slow_speed;
-    RCLCPP_INFO_STREAM(get_logger(), "slow!!!");
-  }*/
 
   // target speed based on steer angle
   float target_speed_steer;
@@ -358,18 +353,20 @@ void SmartGapFollowNode::calcMotionCmd(const sensor_msgs::msg::LaserScan & scan)
   target_speed = 0.5 * target_speed_gap + 0.5 * target_speed_steer;
 
   if(gap_size < last_gap_size) //don't update if gap_size remain the same
-    gap_size_decreases_cnt += 1;
+    gap_size_decrease_cnt += 1;
   else if(gap_size > last_gap_size)
-    gap_size_decreases_cnt = 0;
+    gap_size_decrease_cnt = 0;
   last_gap_size = gap_size;
 
+  // slow down for U-turn
   if((dist_to_gap < 0.9 && abs(steer_angle) * 180 / M_PI > 15) 
-    || (dist_to_gap < 2.0 && gap_size < 2.8 && gap_angle * 180 / M_PI < -120 
-      && gap_angle * 180 / M_PI > -170 && gap_size_decreases_cnt > 3)){
+    || (dist_to_gap < 1.65 && gap_size < 2.8 && gap_angle * 180 / M_PI < -120 
+      && gap_angle * 180 / M_PI > -170 && gap_size_decrease_cnt > 3)){
     target_speed = min_speed;
     RCLCPP_INFO_STREAM(get_logger(), "more slow!!!");
   }
-  if(dist_to_gap > boost_dist_thresh){// && abs(steer_angle) * 180 / M_PI < 20){
+
+  if(dist_to_gap > boost_dist_thresh){
     target_speed = boost_speed;
     acceleration *= 4;
     RCLCPP_INFO_STREAM(get_logger(), "boost!!!");
@@ -381,14 +378,14 @@ void SmartGapFollowNode::calcMotionCmd(const sensor_msgs::msg::LaserScan & scan)
   pub_sim_throttle_ ->publish(throttle_msg);
   
   RCLCPP_INFO_STREAM(get_logger(), "gap_size: "<<gap_size<< " m");
-  RCLCPP_INFO_STREAM(get_logger(), "gap_size_increases_cnt: "<<gap_size_decreases_cnt);
+  RCLCPP_INFO_STREAM(get_logger(), "gap_size_decrease_cnt: "<<gap_size_decrease_cnt);
   RCLCPP_INFO_STREAM(get_logger(), "dist_to_gap: "<<dist_to_gap<< " m");
   RCLCPP_INFO_STREAM(get_logger(), "wall_clearance: "<<wall_clearance<< " m");
   RCLCPP_INFO_STREAM(get_logger(), "gap angle:"<<gap_angle * 180 / M_PI);
   RCLCPP_INFO_STREAM(get_logger(), "target_speed_steer: "<<target_speed_steer << " m/s");
   RCLCPP_INFO_STREAM(get_logger(), "target_speed_gap: "<<target_speed_gap << " m/s");
   RCLCPP_INFO_STREAM(get_logger(), "target_speed: "<<target_speed_out << " m/s"); 
-  RCLCPP_INFO_STREAM(get_logger(), "steer_angle: "<<steer_angle * 180 / M_PI << " deg\n");
+  RCLCPP_INFO_STREAM(get_logger(), "steer_angle: "<<steer_angle * 180 / M_PI << " deg");
   
   /*
   ackermann_msgs::msg::AckermannDriveStamped gap_follow_drive_msg;
@@ -401,12 +398,12 @@ void SmartGapFollowNode::calcMotionCmd(const sensor_msgs::msg::LaserScan & scan)
 }
 
 void SmartGapFollowNode::calcSpeedCmd(float target_speed, float acceleration, float deceleration){
-  const auto duration = rclcpp::Clock().now() - timestamp;
+  const auto duration = rclcpp::Clock().now() - velocitytimestamp;
   const float time_lapse = duration.seconds();
   RCLCPP_INFO_STREAM(get_logger(), "time_lapse: "<<time_lapse << " sec");
   //if(time_lapse < 0.02)
   //  return; 
-  timestamp = rclcpp::Clock().now();
+  velocitytimestamp = rclcpp::Clock().now();
   
   double speed_diff = target_speed - target_speed_out;
   double max_delta = time_lapse * acceleration;
@@ -432,6 +429,7 @@ void SmartGapFollowNode::downSampleLidarScan()
 
 void SmartGapFollowNode::onLidarScan(const sensor_msgs::msg::LaserScan::ConstSharedPtr lidar_scan_)
 {
+  plannertimestamp = rclcpp::Clock().now();
   lidar_scan.angle_increment = lidar_scan_->angle_increment;
   lidar_scan.angle_min = lidar_scan_->angle_min;
   lidar_scan.angle_max = lidar_scan_->angle_max;
@@ -442,6 +440,10 @@ void SmartGapFollowNode::onLidarScan(const sensor_msgs::msg::LaserScan::ConstSha
   findGap(lidar_scan);
   findTargetGap(lidar_scan);
   calcMotionCmd(lidar_scan);
+
+  const auto duration = rclcpp::Clock().now() - plannertimestamp;
+  const float time_lapse = duration.seconds();
+  RCLCPP_INFO_STREAM(get_logger(), "planner process time: "<<time_lapse * 1000 << " ms\n");  
 }
 
 rcl_interfaces::msg::SetParametersResult SmartGapFollowNode::onSetParam(
